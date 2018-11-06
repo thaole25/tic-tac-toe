@@ -1,14 +1,16 @@
-let board = [];
-let emptyTiles = [];
 const numTiles = 9;
 const rowTiles = 3; 
-let saveMoves = {}; // history moves of each player
-
 const humanPlayer = 'X';
 const aiPlayer = 'O';
-let endGame = false;
 const cells = document.querySelectorAll('.cell');
+const resultDiv = document.getElementById("result");
+const resetButton = document.getElementById('reset');
+
+let endGame = false;
 let winList = [];
+let saveMoves = {}; // history moves of each player
+let emptyTiles = [];
+
 startGame();
 
 // Create the results of winning
@@ -43,12 +45,20 @@ function storeResults(){
 }
 
 function startGame(){
+    endGame = false;
+    winList = [];
+    saveMoves = {};
+    emptyTiles = [];
+    resultDiv.style.display = "none";
+    resetButton.style.display = "none";
+
     storeResults();
+    
     for (let i = 0; i < numTiles; i++){
-        board.push(i);
         emptyTiles.push(i);
     }
     for (let i = 0; i < cells.length; i++){
+        cells[i].style.removeProperty('background-color');
         cells[i].innerText = '';
         cells[i].addEventListener('click', makeMove);
     } 
@@ -73,6 +83,7 @@ function moveOfPlayer(selectedCellId, player){
         selectedCell.innerText = player;
         const idx = emptyTiles.indexOf(parseInt(selectedCellId));
         emptyTiles.splice(idx, 1);
+        selectedCell.removeEventListener('click', makeMove);
 
         //Save history moves of player
         if (!saveMoves[player]){
@@ -104,9 +115,6 @@ function gameOver(){
         //cells[i].style.backgroundColor = "yellow";
         cells[i].removeEventListener('click', makeMove);
     }
-    const resultDiv = document.getElementById("result");
     resultDiv.style.display = "block";
-
-    const resetButton = document.getElementById('reset');
     resetButton.style.display = "block";
 }
