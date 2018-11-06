@@ -1,0 +1,22 @@
+table {
+    border-collapse: collapse;
+    margin: 0px auto;
+}
+
+td {
+    border-style: solid;
+    height: 60px;
+    width: 60px;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 40px;
+    cursor: pointer;
+}
+
+#result {
+    display: none;
+}
+
+#reset {
+    display: none;
+}
