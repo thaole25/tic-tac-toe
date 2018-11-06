@@ -8,46 +8,46 @@ const humanPlayer = 'X';
 const aiPlayer = 'O';
 let endGame = false;
 const cells = document.querySelectorAll('.cell');
-
-// Create the results of winning
 let winList = [];
-for (let i = 0; i < rowTiles; i++){
-    let column = [];
-    let maxValueColumn = i + (rowTiles - 1) * rowTiles;
-    for (let j = i; j <= maxValueColumn; j += rowTiles){
-        column.push(j);
-    }
-    winList.push(column);
-
-    let row = [];
-    let maxValueRow = i * rowTiles + (rowTiles - 1);
-    for (let j = i*rowTiles; j <= maxValueRow; j++){
-        row.push(j);
-    }
-    winList.push(row);
-}
-
-//Add 2 diagonal winning results
-diagonal1 = [];
-for (let j = 0; j < numTiles; j += (rowTiles + 1)){
-    diagonal1.push(j);
-}
-winList.push(diagonal1);
-diagonal2 = [];
-for (let j = (rowTiles - 1); j < (numTiles - rowTiles + 1); j+= (rowTiles - 1)){
-    diagonal2.push(j);
-}
-winList.push(diagonal2);
-//console.log(winList);
-
 startGame();
 
+// Create the results of winning
+function storeResults(){
+    for (let i = 0; i < rowTiles; i++){
+        let column = [];
+        let maxValueColumn = i + (rowTiles - 1) * rowTiles;
+        for (let j = i; j <= maxValueColumn; j += rowTiles){
+            column.push(j);
+        }
+        winList.push(column);
+    
+        let row = [];
+        let maxValueRow = i * rowTiles + (rowTiles - 1);
+        for (let j = i*rowTiles; j <= maxValueRow; j++){
+            row.push(j);
+        }
+        winList.push(row);
+    }
+    
+    //Add 2 diagonal winning results
+    diagonal1 = [];
+    for (let j = 0; j < numTiles; j += (rowTiles + 1)){
+        diagonal1.push(j);
+    }
+    winList.push(diagonal1);
+    diagonal2 = [];
+    for (let j = (rowTiles - 1); j < (numTiles - rowTiles + 1); j+= (rowTiles - 1)){
+        diagonal2.push(j);
+    }
+    winList.push(diagonal2);
+}
+
 function startGame(){
+    storeResults();
     for (let i = 0; i < numTiles; i++){
         board.push(i);
         emptyTiles.push(i);
     }
-
     for (let i = 0; i < cells.length; i++){
         cells[i].innerText = '';
         cells[i].addEventListener('click', makeMove);
@@ -107,6 +107,6 @@ function gameOver(){
     const resultDiv = document.getElementById("result");
     resultDiv.style.display = "block";
 
-    //const resetButton = document.getElementById('reset');
-    //resetButton.style.display = 
+    const resetButton = document.getElementById('reset');
+    resetButton.style.display = "block";
 }
