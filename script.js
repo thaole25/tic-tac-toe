@@ -8,8 +8,7 @@ const resetButton = document.getElementById('reset');
 
 let endGame = false;
 let winList = [];
-let saveMoves = {}; // history moves of each player
-let emptyTiles = [];
+let board = [];
 
 startGame();
 
@@ -47,15 +46,14 @@ function storeResults(){
 function startGame(){
     endGame = false;
     winList = [];
-    saveMoves = {};
-    emptyTiles = [];
+    board = [];
     resultDiv.style.display = "none";
     resetButton.style.display = "none";
 
     storeResults();
     
     for (let i = 0; i < numTiles; i++){
-        emptyTiles.push(i);
+        board.push(i);
     }
     for (let i = 0; i < cells.length; i++){
         cells[i].style.removeProperty('background-color');
@@ -65,49 +63,71 @@ function startGame(){
 }
 
 function makeMove(cell){
+    let availableSpots = board.filter(elem => (typeof elem) == 'number');
     const selectedCellId = cell.target.id;
-    moveOfPlayer(selectedCellId, humanPlayer);
+    moveOfPlayer(availableSpots, selectedCellId, humanPlayer);
     if (!endGame){
-        moveOfPlayer(emptyTiles[0], aiPlayer);
+        moveOfPlayer(availableSpots, availableSpots[0], aiPlayer);
     }
 }
 
-function moveOfPlayer(selectedCellId, player){
+function moveOfPlayer(availableSpots, selectedCellId, player){
      // Check tie
-    if (emptyTiles.length == 0 && !endGame){
-        document.getElementById("result").innerText = "Tie game";
+    if (availableSpots.length == 0 && !endGame){
+        resultDiv.innerText = "Tie game";
         endGame = true;
         gameOver();
     }else{
         const selectedCell = document.getElementById(selectedCellId);
         selectedCell.innerText = player;
-        const idx = emptyTiles.indexOf(parseInt(selectedCellId));
-        emptyTiles.splice(idx, 1);
         selectedCell.removeEventListener('click', makeMove);
-
-        //Save history moves of player
-        if (!saveMoves[player]){
-            saveMoves[player] = [];
-        }
-        saveMoves[player].push(parseInt(selectedCellId));
-    
-        //Check if the player won
-        for (let i = 0; i < winList.length; i++){
-            endGame = winList[i].every(elem => saveMoves[player].includes(elem));
         
-            // If the player won
-            if (endGame){
-                let color = player == humanPlayer ? "blue": "red";
-                let announce = player == humanPlayer ? "You won": "You lose";
-                for (let tileIndex of winList[i]){
-                    document.getElementById(tileIndex).style.backgroundColor = color;
-                }
-                document.getElementById("result").innerText = announce;
-                gameOver();
-                break;
-            }   
+        // Check if the player won
+        isWon(player, selectedCellId);
+    }
+}
+
+function isWon(player, selectedCellId){
+    let announce;
+    let color;
+    let movesHistory = [];
+    
+    if (player == humanPlayer){
+        board[parseInt(selectedCellId)] = "X";
+        announce = "You won";
+        color = "blue";
+        for (let i = 0; i < board.length; i++){
+            if(board[i] == "X"){
+                movesHistory.push(i);
+            }
+        }
+    }else{
+        board[parseInt(selectedCellId)] = "O";
+        announce = "You lose";
+        color = "red";
+        for (let i = 0; i < board.length; i++){
+            if(board[i] == "O"){
+                movesHistory.push(i);
+            }
         }
     }
+    console.log(movesHistory);
+    for (let i = 0; i < winList.length; i++){
+        endGame = winList[i].every(elem => movesHistory.includes(elem));
+        if (endGame){
+            for (let tileIndex of winList[i]){
+                document.getElementById(tileIndex).style.backgroundColor = color;
+            }
+            resultDiv.innerText = announce;
+            resultDiv.style.backgroundColor = color;
+            gameOver();
+            break;
+        }   
+    }
+}
+
+function minimax(player){
+
 }
 
 function gameOver(){
