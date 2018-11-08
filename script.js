@@ -9,6 +9,7 @@ const resetButton = document.getElementById('reset');
 let endGame = false;
 let winList = [];
 let board = [];
+let count = 0;
 
 startGame();
 
@@ -66,7 +67,7 @@ function makeMove(cell){
     const selectedCellId = cell.target.id;
     moveOfPlayer(board, selectedCellId, humanPlayer);
     if (!endGame){
-        let copyBoard = board;
+        let copyBoard = board.slice();
         copyBoard = ['X', 1, 'O', 'O', 4, 'O', 6, 'X', 'X'];
         minimax(copyBoard, humanPlayer);
         //let bestAction = minimax(board, aiPlayer);
@@ -77,7 +78,7 @@ function makeMove(cell){
 
 function moveOfPlayer(currentState, selectedCellId, player){
     // Check tie
-    if (! isTie(currentState)){
+    if (! isTie(currentState, false)){
         const selectedCell = document.getElementById(selectedCellId);
         selectedCell.innerText = player;
         selectedCell.removeEventListener('click', makeMove);
@@ -90,23 +91,25 @@ function moveOfPlayer(currentState, selectedCellId, player){
         }
 
         // Check if the player won
-        isWon(currentState, player);
+        isWon(currentState, player, false);
     }
 }
 
-function isTie(currentState){
+function isTie(currentState, simulateMode){
     let availableSpots = currentState.filter(elem => (typeof elem) == 'number');
-    if (availableSpots.length == 0){ //&& !endGame){
-        resultDiv.innerText = "Tie game";
-        endGame = true;
-        gameOver();
+    if ((availableSpots.length == 0)){
+        if (!simulateMode && !endGame){
+            resultDiv.innerText = "Tie game";
+            endGame = true;
+            gameOver();
+        }
         return true;
     }else{
         return false;
     }
 }
 
-function isWon(currentState, player){
+function isWon(currentState, player, simulateMode){
     let announce;
     let color;
     let movesHistory = [];
@@ -129,63 +132,70 @@ function isWon(currentState, player){
         }
     }
     for (let i = 0; i < winList.length; i++){
-        endGame = winList[i].every(elem => movesHistory.includes(elem));
-        if (endGame){
-            for (let tileIndex of winList[i]){
-                document.getElementById(tileIndex).style.backgroundColor = color;
+        let check = winList[i].every(elem => movesHistory.includes(elem));
+        
+        if (check){
+            if (!simulateMode){
+                showResult(winList[i], announce, color);
+                endGame = true;    
             }
-            resultDiv.innerText = announce;
-            resultDiv.style.backgroundColor = color;
-            gameOver();
             return true;
-        }   
+        }
+           
     }
     return false;
 }
 
-class Node{
-    constructor(state, player, parent, children, payoff){
-        this.state = state; // the board
-        this.player = player; // X or O, action that creates the state
-        this.parent = parent;
-        this.children = children;
-        this.payoff = payoff;
+function showResult(winList, announce, color){
+    for (let tileIndex of winList){
+        document.getElementById(tileIndex).style.backgroundColor = color;
     }
+    resultDiv.innerText = announce;
+    resultDiv.style.backgroundColor = color;
+    gameOver();
 }
+
+// class Node{
+//     constructor(state, player, parent, children = [], payoff = null){
+//         this.state = state; // the board
+//         this.player = player; // X or O, action that creates the state
+//         this.parent = parent;
+//         this.children = children;
+//         this.payoff = payoff;
+//     }
+// }
+
 
 function minimax(currentState, player){
     // Generate the tree
-    let startNode = new Node(currentState, player, null, [], null);
-    tree(startNode);
-
+    let tree = [];
+    const startNode = {"State": currentState, "Player": player, "Parent": null, "Payoff": null};
+    tree.push(startNode);
+    createTree(tree);
     // print the tree
-    //console.log(startNode);
     //printTree(startNode);
 }
 
-function tree(currentNode){
-    let currentState = currentNode.state;
-    let currentPlayer = currentNode.player;
-    
-    if (isWon(currentState, currentPlayer)){
-        if (currentPlayer == humanPlayer) currentNode.payoff = [-1,1];
-        else currentNode.payoff = [1,-1];
-        console.log(currentNode.state, currentNode.payoff);
+function createTree(tree){
+    currentNode = tree[tree.length - 1];
+    console.log(count, currentNode.State, currentNode.Payoff);
+    count += 1;
+    if (isWon(currentNode.State, currentNode.Player, true)){
+        if (currentNode.State == humanPlayer) currentNode.Payoff = [-1,1];
+        else currentNode.Payoff = [1,-1];
         return;
-    }else if (isTie(currentState)){
-        currentNode.payoff = [0,0];
-        console.log(currentNode.state, currentNode.payoff);
+    }else if (isTie(currentNode.State, true)){
+        currentNode.Payoff = [0,0];
         return;
     }
-    
-    let nextState = currentState;
-    let availableSpots = currentState.filter(elem => (typeof elem) == 'number');
-    for (let i = 0; i < availableSpots.length; i++){
-        nextState[availableSpots[i]] = currentPlayer;
-        let nextPlayer = currentPlayer == humanPlayer ? 'O':'X';
-        let nextNode = new Node(nextState, nextPlayer, currentNode, [], null);
-        currentNode.children.push(nextNode);
-        tree(nextNode);
+    let nextState = currentNode.State.slice();
+    const leftSpots = currentNode.State.filter(elem => (typeof elem) == 'number');
+    for (let i = 0; i < leftSpots.length; i++){
+        nextPlayer = currentNode.Player == humanPlayer ? 'O':'X';
+        nextState[leftSpots[i]] = nextPlayer;
+        nextNode = {"State": nextState, "Player": nextPlayer, "Parent": currentNode, "Payoff": null};
+        tree.push(nextNode);
+        createTree(tree);
     }
 }
 
@@ -194,14 +204,12 @@ function printTree(currentNode){
         return;
     }
     for (i = 0; i < currentNode.children.length; i++){
-        console.log(currentNode.children[i]);
         printTree(currentNode.children[i]);
     }
 }
 
 function gameOver(){
     for (let i = 0; i < cells.length; i++){
-        //cells[i].style.backgroundColor = "yellow";
         cells[i].removeEventListener('click', makeMove);
     }
     resultDiv.style.display = "block";
