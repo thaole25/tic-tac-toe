@@ -11,7 +11,6 @@ const resetButton = document.getElementById('reset');
 let endGame = false;
 let winList = [];
 let board = [];
-let count = 0;
 
 startGame();
 
@@ -58,8 +57,8 @@ function startGame(){
     for (let i = 0; i < numTiles; i++){
         board.push(i);
     }
-    //board = [0, 1, 'O', 'O', 4, 'O', 6, 'X', 'X'];
-
+    //board = ['X', 1, 'O', 'O', 4, 'O', 6, 'X', 'X'];
+    resultDiv.style.removeProperty('background-color');
     for (let i = 0; i < cells.length; i++){
         cells[i].style.removeProperty('background-color');
         cells[i].innerText = '';
@@ -72,7 +71,6 @@ function makeMove(cell){
     moveOfPlayer(board, selectedCellId, humanPlayer);
     if (!endGame){
         let copyBoard = board.slice();
-        //copyBoard = ['X', 1, 'O', 'O', 4, 'O', 6, 'X', 'X'];
         let bestAction = minimax(copyBoard, humanPlayer);
         //let availableSpots = board.filter(elem => (typeof elem) == 'number');
         moveOfPlayer(board, bestAction, aiPlayer);
@@ -162,64 +160,25 @@ function minimax(currentState, player){
     // Generate the tree
     let tree = [];
     const startNode = {"State": currentState, "Player": player, "Payoff": null, 
-                       "PrevMove": null, "Children": [], "BestMove": null};
+                       "PrevMove": null, "Children": []};
     tree.push(startNode);
     createTree(tree);
 
-    //Backpropagate the payoff
-    let queue = [tree[0]];
-    let bestMove = null;
-    while (queue.length > 0){
-        let selectedNode = queue[0];
-        queue.splice(0, 1);
-        let check = true;
-        for (let child of selectedNode.Children){
-            queue.push(child);
-            if (child.Payoff == null){
-                check = false;
-                break;
-            }
-        }                                   
-        if (selectedNode.Payoff == null){
-            if (check){
-                let maxValue = -100;
-                let bestPayoff = null;
-                if (selectedNode.Player == humanPlayer){
-                    // childNode will be aiPlayer
-                    for (let child of selectedNode.Children){
-                        if (maxValue < child.Payoff[0]){
-                            maxValue = child.Payoff[0];
-                            bestPayoff = child.Payoff;
-                            bestMove = child.PrevMove;
-                        }
-                    }
-                }else{
-                    for (let child of selectedNode.Children){
-                        if (maxValue < child.Payoff[1]){
-                            maxValue = child.Payoff[1];
-                            bestPayoff = child.Payoff;
-                            bestMove = child.PrevMove;
-                        }
-                    }
-                }
-                selectedNode.Payoff = bestPayoff;
-                if ("BestMove" in selectedNode){
-                    selectedNode.BestMove = bestMove;
-                }
-            }else{
-                queue.push(selectedNode);
-            }
-        }
-    }
-
-    return startNode.BestMove;
     // print the tree: BFS
     // printTree(tree);
+
+    let bestAction = null;
+    // TODO: Not really efficient, need to improve
+    for (let child of startNode.Children){
+        if (child.Payoff == startNode.Payoff){
+            bestAction = child.PrevMove;
+        }
+    }
+    return bestAction;
 }
 
 function createTree(tree){
     let currentNode = tree[tree.length - 1];
-    count += 1;
     if (isWon(currentNode.State, currentNode.Player, true)){
         if (currentNode.Player == humanPlayer) currentNode.Payoff = [-1,1];
         else currentNode.Payoff = [1,-1];
@@ -229,7 +188,8 @@ function createTree(tree){
         return;
     }
     let leftSpots = currentNode.State.filter(elem => (typeof elem) == 'number');
-    for (let i = 0; i < leftSpots.length; i++){
+    let len = leftSpots.length;
+    for (let i = 0; i < len; i++){
         let nextPlayer = currentNode.Player == humanPlayer ? 'O':'X';
         let nextState = currentNode.State.slice();
         nextState[leftSpots[i]] = nextPlayer;
@@ -238,6 +198,23 @@ function createTree(tree){
         currentNode.Children.push(nextNode);
         tree.push(nextNode);
         createTree(tree);
+    }
+    let maxValue = -100;
+    if (currentNode.Player == humanPlayer){
+        // childNode will be aiPlayer
+        for (let child of currentNode.Children){
+            if (maxValue < child.Payoff[0]){
+                maxValue = child.Payoff[0];
+                currentNode.Payoff = child.Payoff;
+            }
+        }
+    }else{
+        for (let child of currentNode.Children){
+            if (maxValue < child.Payoff[1]){
+                maxValue = child.Payoff[1];
+                currentNode.Payoff = child.Payoff;
+            }
+        }
     }
 }
 
