@@ -63,55 +63,71 @@ function startGame(){
 }
 
 function makeMove(cell){
-    let availableSpots = board.filter(elem => (typeof elem) == 'number');
     const selectedCellId = cell.target.id;
-    moveOfPlayer(availableSpots, selectedCellId, humanPlayer);
+    moveOfPlayer(board, selectedCellId, humanPlayer);
     if (!endGame){
-        moveOfPlayer(availableSpots, availableSpots[0], aiPlayer);
+        let copyBoard = board;
+        copyBoard = ['X', 1, 'O', 'O', 4, 'O', 6, 'X', 'X'];
+        minimax(copyBoard, humanPlayer);
+        //let bestAction = minimax(board, aiPlayer);
+        //let availableSpots = board.filter(elem => (typeof elem) == 'number');
+        //moveOfPlayer(board, availableSpots[0], aiPlayer);
     }
 }
 
-function moveOfPlayer(availableSpots, selectedCellId, player){
-     // Check tie
-    if (availableSpots.length == 0 && !endGame){
-        resultDiv.innerText = "Tie game";
-        endGame = true;
-        gameOver();
-    }else{
+function moveOfPlayer(currentState, selectedCellId, player){
+    // Check tie
+    if (! isTie(currentState)){
         const selectedCell = document.getElementById(selectedCellId);
         selectedCell.innerText = player;
         selectedCell.removeEventListener('click', makeMove);
         
+        // Fill the tile
+        if (player == humanPlayer){
+            currentState[parseInt(selectedCellId)] = humanPlayer;
+        }else{
+            currentState[parseInt(selectedCellId)] = aiPlayer;
+        }
+
         // Check if the player won
-        isWon(player, selectedCellId);
+        isWon(currentState, player);
     }
 }
 
-function isWon(player, selectedCellId){
+function isTie(currentState){
+    let availableSpots = currentState.filter(elem => (typeof elem) == 'number');
+    if (availableSpots.length == 0){ //&& !endGame){
+        resultDiv.innerText = "Tie game";
+        endGame = true;
+        gameOver();
+        return true;
+    }else{
+        return false;
+    }
+}
+
+function isWon(currentState, player){
     let announce;
     let color;
     let movesHistory = [];
     
     if (player == humanPlayer){
-        board[parseInt(selectedCellId)] = "X";
         announce = "You won";
         color = "blue";
-        for (let i = 0; i < board.length; i++){
-            if(board[i] == "X"){
+        for (let i = 0; i < currentState.length; i++){
+            if(currentState[i] == humanPlayer){
                 movesHistory.push(i);
             }
         }
     }else{
-        board[parseInt(selectedCellId)] = "O";
         announce = "You lose";
         color = "red";
-        for (let i = 0; i < board.length; i++){
-            if(board[i] == "O"){
+        for (let i = 0; i < currentState.length; i++){
+            if(currentState[i] == aiPlayer){
                 movesHistory.push(i);
             }
         }
     }
-    console.log(movesHistory);
     for (let i = 0; i < winList.length; i++){
         endGame = winList[i].every(elem => movesHistory.includes(elem));
         if (endGame){
@@ -121,13 +137,66 @@ function isWon(player, selectedCellId){
             resultDiv.innerText = announce;
             resultDiv.style.backgroundColor = color;
             gameOver();
-            break;
+            return true;
         }   
+    }
+    return false;
+}
+
+class Node{
+    constructor(state, player, parent, children, payoff){
+        this.state = state; // the board
+        this.player = player; // X or O, action that creates the state
+        this.parent = parent;
+        this.children = children;
+        this.payoff = payoff;
     }
 }
 
-function minimax(player){
+function minimax(currentState, player){
+    // Generate the tree
+    let startNode = new Node(currentState, player, null, [], null);
+    tree(startNode);
 
+    // print the tree
+    //console.log(startNode);
+    //printTree(startNode);
+}
+
+function tree(currentNode){
+    let currentState = currentNode.state;
+    let currentPlayer = currentNode.player;
+    
+    if (isWon(currentState, currentPlayer)){
+        if (currentPlayer == humanPlayer) currentNode.payoff = [-1,1];
+        else currentNode.payoff = [1,-1];
+        console.log(currentNode.state, currentNode.payoff);
+        return;
+    }else if (isTie(currentState)){
+        currentNode.payoff = [0,0];
+        console.log(currentNode.state, currentNode.payoff);
+        return;
+    }
+    
+    let nextState = currentState;
+    let availableSpots = currentState.filter(elem => (typeof elem) == 'number');
+    for (let i = 0; i < availableSpots.length; i++){
+        nextState[availableSpots[i]] = currentPlayer;
+        let nextPlayer = currentPlayer == humanPlayer ? 'O':'X';
+        let nextNode = new Node(nextState, nextPlayer, currentNode, [], null);
+        currentNode.children.push(nextNode);
+        tree(nextNode);
+    }
+}
+
+function printTree(currentNode){
+    if (currentNode == null){
+        return;
+    }
+    for (i = 0; i < currentNode.children.length; i++){
+        console.log(currentNode.children[i]);
+        printTree(currentNode.children[i]);
+    }
 }
 
 function gameOver(){
