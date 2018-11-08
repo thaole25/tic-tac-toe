@@ -155,16 +155,6 @@ function showResult(winList, announce, color){
     gameOver();
 }
 
-// class Node{
-//     constructor(state, player, parent, children = [], payoff = null){
-//         this.state = state; // the board
-//         this.player = player; // X or O, action that creates the state
-//         this.parent = parent;
-//         this.children = children;
-//         this.payoff = payoff;
-//     }
-// }
-
 
 function minimax(currentState, player){
     // Generate the tree
@@ -172,41 +162,43 @@ function minimax(currentState, player){
     const startNode = {"State": currentState, "Player": player, "Parent": null, "Payoff": null};
     tree.push(startNode);
     createTree(tree);
+
     // print the tree
     //printTree(startNode);
+
+    
 }
 
 function createTree(tree){
-    currentNode = tree[tree.length - 1];
-    console.log(count, currentNode.State, currentNode.Payoff);
+    let currentNode = tree[tree.length - 1];
     count += 1;
     if (isWon(currentNode.State, currentNode.Player, true)){
-        if (currentNode.State == humanPlayer) currentNode.Payoff = [-1,1];
+        if (currentNode.Player == humanPlayer) currentNode.Payoff = [-1,1];
         else currentNode.Payoff = [1,-1];
         return;
     }else if (isTie(currentNode.State, true)){
         currentNode.Payoff = [0,0];
         return;
     }
-    let nextState = currentNode.State.slice();
-    const leftSpots = currentNode.State.filter(elem => (typeof elem) == 'number');
+    let leftSpots = currentNode.State.filter(elem => (typeof elem) == 'number');
     for (let i = 0; i < leftSpots.length; i++){
-        nextPlayer = currentNode.Player == humanPlayer ? 'O':'X';
+        let nextPlayer = currentNode.Player == humanPlayer ? 'O':'X';
+        let nextState = currentNode.State.slice();
         nextState[leftSpots[i]] = nextPlayer;
-        nextNode = {"State": nextState, "Player": nextPlayer, "Parent": currentNode, "Payoff": null};
+        let nextNode = {"State": nextState, "Player": nextPlayer, "Parent": currentNode, "Payoff": null};
         tree.push(nextNode);
         createTree(tree);
     }
 }
 
-function printTree(currentNode){
-    if (currentNode == null){
-        return;
-    }
-    for (i = 0; i < currentNode.children.length; i++){
-        printTree(currentNode.children[i]);
-    }
-}
+// function printTree(currentNode){
+//     if (currentNode == null){
+//         return;
+//     }
+//     for (i = 0; i < currentNode.children.length; i++){
+//         printTree(currentNode.children[i]);
+//     }
+// }
 
 function gameOver(){
     for (let i = 0; i < cells.length; i++){
