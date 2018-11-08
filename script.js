@@ -1,3 +1,5 @@
+// Author: Thao Le
+
 const numTiles = 9;
 const rowTiles = 3; 
 const humanPlayer = 'X';
@@ -55,6 +57,8 @@ function startGame(){
     for (let i = 0; i < numTiles; i++){
         board.push(i);
     }
+    //board = ['X', 1, 'O', 'O', 4, 'O', 6, 'X', 'X'];
+    resultDiv.style.removeProperty('background-color');
     for (let i = 0; i < cells.length; i++){
         cells[i].style.removeProperty('background-color');
         cells[i].innerText = '';
@@ -66,12 +70,10 @@ function makeMove(cell){
     const selectedCellId = cell.target.id;
     moveOfPlayer(board, selectedCellId, humanPlayer);
     if (!endGame){
-        let copyBoard = board;
-        copyBoard = ['X', 1, 'O', 'O', 4, 'O', 6, 'X', 'X'];
-        minimax(copyBoard, humanPlayer);
-        //let bestAction = minimax(board, aiPlayer);
+        let copyBoard = board.slice();
+        let bestAction = minimax(copyBoard, humanPlayer);
         //let availableSpots = board.filter(elem => (typeof elem) == 'number');
-        //moveOfPlayer(board, availableSpots[0], aiPlayer);
+        moveOfPlayer(board, bestAction, aiPlayer);
     }
 }
 
@@ -136,10 +138,11 @@ function isWon(currentState, player, simulateMode){
         if (check){
             if (!simulateMode){
                 showResult(winList[i], announce, color);
-                endGame = true;
+                endGame = true;    
             }
-            return true;     
+            return true;
         }
+           
     }
     return false;
 }
@@ -153,59 +156,77 @@ function showResult(winList, announce, color){
     gameOver();
 }
 
-class Node{
-    constructor(state, player, parent, children = [], payoff = null){
-        this.state = state; // the board
-        this.player = player; // X or O, action that creates the state
-        this.parent = parent;
-        this.children = children;
-        this.payoff = payoff;
-    }
-}
-
 function minimax(currentState, player){
     // Generate the tree
-    const startNode = new Node(currentState, player, null);
-    tree(startNode);
-    // print the tree
-    //printTree(startNode);
+    let tree = [];
+    const startNode = {"State": currentState, "Player": player, "Payoff": null, 
+                       "PrevMove": null, "Children": []};
+    tree.push(startNode);
+    createTree(tree);
+
+    // print the tree: BFS
+    // printTree(tree);
+
+    let bestAction = null;
+    // TODO: Not really efficient, need to improve
+    for (let child of startNode.Children){
+        if (child.Payoff == startNode.Payoff){
+            bestAction = child.PrevMove;
+        }
+    }
+    return bestAction;
 }
 
-let nextState;
-let availableSpots;
-let nextPlayer;
-let nextNode;
-let count = 0;
-
-function tree(currentNode){
-    count += 1;
-
-    if (isWon(currentNode.state, currentNode.player, true)){
-        if (currentNode.player == humanPlayer) currentNode.payoff = [-1,1];
-        else currentNode.payoff = [1,-1];
+function createTree(tree){
+    let currentNode = tree[tree.length - 1];
+    if (isWon(currentNode.State, currentNode.Player, true)){
+        if (currentNode.Player == humanPlayer) currentNode.Payoff = [-1,1];
+        else currentNode.Payoff = [1,-1];
         return;
-    }else if (isTie(currentNode.state, true)){
-        currentNode.payoff = [0,0];
+    }else if (isTie(currentNode.State, true)){
+        currentNode.Payoff = [0,0];
         return;
     }
-    
-    nextState = currentNode.state.slice();
-    availableSpots = currentNode.state.filter(elem => (typeof elem) == 'number');
-    console.log(availableSpots);
-    console.log(availableSpots.length);
-    for (let i = 0; i < availableSpots.length; i++){
-        nextPlayer = currentNode.player == humanPlayer ? 'O':'X';
-        nextState[availableSpots[i]] = nextPlayer;
-        nextNode = new Node(nextState, nextPlayer, currentNode);
-        currentNode.children.push(nextNode);
-        tree(nextNode);
+    let leftSpots = currentNode.State.filter(elem => (typeof elem) == 'number');
+    let len = leftSpots.length;
+    for (let i = 0; i < len; i++){
+        let nextPlayer = currentNode.Player == humanPlayer ? 'O':'X';
+        let nextState = currentNode.State.slice();
+        nextState[leftSpots[i]] = nextPlayer;
+        let nextNode = {"State": nextState, "Player": nextPlayer, "Payoff": null, 
+                        "PrevMove": leftSpots[i], "Children": []};
+        currentNode.Children.push(nextNode);
+        tree.push(nextNode);
+        createTree(tree);
+    }
+    let maxValue = -100;
+    if (currentNode.Player == humanPlayer){
+        // childNode will be aiPlayer
+        for (let child of currentNode.Children){
+            if (maxValue < child.Payoff[0]){
+                maxValue = child.Payoff[0];
+                currentNode.Payoff = child.Payoff;
+            }
+        }
+    }else{
+        for (let child of currentNode.Children){
+            if (maxValue < child.Payoff[1]){
+                maxValue = child.Payoff[1];
+                currentNode.Payoff = child.Payoff;
+            }
+        }
     }
 }
 
-function printTree(currentNode){
-    console.log(currentNode);
-    for (i = 0; i < currentNode.children.length; i++){
-        printTree(currentNode.children[i]);
+function printTree(tree){
+    let queue = [tree[0]];
+    while (queue.length > 0){
+        let selectedNode = queue[0];
+        console.log(selectedNode);
+        queue.splice(0, 1);
+        for (let child of selectedNode.Children){
+            queue.push(child);
+        }                                                                                                                                                                                                                                                                                       
     }
 }
 
