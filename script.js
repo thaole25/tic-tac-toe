@@ -66,18 +66,18 @@ function makeMove(cell){
     const selectedCellId = cell.target.id;
     moveOfPlayer(board, selectedCellId, humanPlayer);
     if (!endGame){
-        let copyBoard = board;
-        copyBoard = ['X', 1, 'O', 'O', 4, 'O', 6, 'X', 'X'];
-        minimax(copyBoard, humanPlayer);
+        //let copyBoard = board;
+        //copyBoard = ['X', 1, 'O', 'O', 4, 'O', 6, 'X', 'X'];
+        //minimax(copyBoard, humanPlayer);
         //let bestAction = minimax(board, aiPlayer);
-        //let availableSpots = board.filter(elem => (typeof elem) == 'number');
-        //moveOfPlayer(board, availableSpots[0], aiPlayer);
+        let availableSpots = board.filter(elem => (typeof elem) == 'number');
+        moveOfPlayer(board, availableSpots[0], aiPlayer);
     }
 }
 
 function moveOfPlayer(currentState, selectedCellId, player){
     // Check tie
-    if (! isTie(currentState)){
+    if (! isTie(currentState, false)){
         const selectedCell = document.getElementById(selectedCellId);
         selectedCell.innerText = player;
         selectedCell.removeEventListener('click', makeMove);
@@ -90,23 +90,25 @@ function moveOfPlayer(currentState, selectedCellId, player){
         }
 
         // Check if the player won
-        isWon(currentState, player);
+        isWon(currentState, player, false);
     }
 }
 
-function isTie(currentState){
+function isTie(currentState, simulateMode){
     let availableSpots = currentState.filter(elem => (typeof elem) == 'number');
-    if (availableSpots.length == 0){ //&& !endGame){
-        resultDiv.innerText = "Tie game";
-        endGame = true;
-        gameOver();
+    if ((availableSpots.length == 0)){
+        if (!simulateMode && !endGame){
+            resultDiv.innerText = "Tie game";
+            endGame = true;
+            gameOver();
+        }
         return true;
     }else{
         return false;
     }
 }
 
-function isWon(currentState, player){
+function isWon(currentState, player, simulateMode){
     let announce;
     let color;
     let movesHistory = [];
@@ -129,18 +131,26 @@ function isWon(currentState, player){
         }
     }
     for (let i = 0; i < winList.length; i++){
-        endGame = winList[i].every(elem => movesHistory.includes(elem));
-        if (endGame){
-            for (let tileIndex of winList[i]){
-                document.getElementById(tileIndex).style.backgroundColor = color;
+        let check = winList[i].every(elem => movesHistory.includes(elem));
+        
+        if (check){
+            if (!simulateMode){
+                showResult(winList[i], announce, color);
+                endGame = true;
             }
-            resultDiv.innerText = announce;
-            resultDiv.style.backgroundColor = color;
-            gameOver();
-            return true;
-        }   
+            return true;     
+        }
     }
     return false;
+}
+
+function showResult(winList, announce, color){
+    for (let tileIndex of winList){
+        document.getElementById(tileIndex).style.backgroundColor = color;
+    }
+    resultDiv.innerText = announce;
+    resultDiv.style.backgroundColor = color;
+    gameOver();
 }
 
 class Node{
@@ -178,7 +188,7 @@ function tree(currentNode){
         return;
     }
     
-    let nextState = currentState;
+    let nextState = currentState.slice();
     let availableSpots = currentState.filter(elem => (typeof elem) == 'number');
     for (let i = 0; i < availableSpots.length; i++){
         nextState[availableSpots[i]] = currentPlayer;
@@ -201,7 +211,6 @@ function printTree(currentNode){
 
 function gameOver(){
     for (let i = 0; i < cells.length; i++){
-        //cells[i].style.backgroundColor = "yellow";
         cells[i].removeEventListener('click', makeMove);
     }
     resultDiv.style.display = "block";
