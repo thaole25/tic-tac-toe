@@ -58,6 +58,8 @@ function startGame(){
     for (let i = 0; i < numTiles; i++){
         board.push(i);
     }
+    //board = [0, 1, 'O', 'O', 4, 'O', 6, 'X', 'X'];
+
     for (let i = 0; i < cells.length; i++){
         cells[i].style.removeProperty('background-color');
         cells[i].innerText = '';
@@ -70,11 +72,10 @@ function makeMove(cell){
     moveOfPlayer(board, selectedCellId, humanPlayer);
     if (!endGame){
         let copyBoard = board.slice();
-        copyBoard = ['X', 1, 'O', 'O', 4, 'O', 6, 'X', 'X'];
-        minimax(copyBoard, humanPlayer);
-        //let bestAction = minimax(board, aiPlayer);
+        //copyBoard = ['X', 1, 'O', 'O', 4, 'O', 6, 'X', 'X'];
+        let bestAction = minimax(copyBoard, humanPlayer);
         //let availableSpots = board.filter(elem => (typeof elem) == 'number');
-        //moveOfPlayer(board, availableSpots[0], aiPlayer);
+        moveOfPlayer(board, bestAction, aiPlayer);
     }
 }
 
@@ -157,27 +158,63 @@ function showResult(winList, announce, color){
     gameOver();
 }
 
-
 function minimax(currentState, player){
     // Generate the tree
     let tree = [];
-    const startNode = {"State": currentState, "Player": player, "Parent": null, 
-                        "Payoff": null, "PrevMove": null, "Children": []};
+    const startNode = {"State": currentState, "Player": player, "Payoff": null, 
+                       "PrevMove": null, "Children": [], "BestMove": null};
     tree.push(startNode);
     createTree(tree);
 
-    // print the tree: BFS
-    //printTree(tree);
-
     //Backpropagate the payoff
     let queue = [tree[0]];
+    let bestMove = null;
     while (queue.length > 0){
         let selectedNode = queue[0];
         queue.splice(0, 1);
+        let check = true;
         for (let child of selectedNode.Children){
             queue.push(child);
-        }                                                                                                                                                                                                                                                                                       
+            if (child.Payoff == null){
+                check = false;
+                break;
+            }
+        }                                   
+        if (selectedNode.Payoff == null){
+            if (check){
+                let maxValue = -100;
+                let bestPayoff = null;
+                if (selectedNode.Player == humanPlayer){
+                    // childNode will be aiPlayer
+                    for (let child of selectedNode.Children){
+                        if (maxValue < child.Payoff[0]){
+                            maxValue = child.Payoff[0];
+                            bestPayoff = child.Payoff;
+                            bestMove = child.PrevMove;
+                        }
+                    }
+                }else{
+                    for (let child of selectedNode.Children){
+                        if (maxValue < child.Payoff[1]){
+                            maxValue = child.Payoff[1];
+                            bestPayoff = child.Payoff;
+                            bestMove = child.PrevMove;
+                        }
+                    }
+                }
+                selectedNode.Payoff = bestPayoff;
+                if ("BestMove" in selectedNode){
+                    selectedNode.BestMove = bestMove;
+                }
+            }else{
+                queue.push(selectedNode);
+            }
+        }
     }
+
+    return startNode.BestMove;
+    // print the tree: BFS
+    // printTree(tree);
 }
 
 function createTree(tree){
@@ -196,8 +233,8 @@ function createTree(tree){
         let nextPlayer = currentNode.Player == humanPlayer ? 'O':'X';
         let nextState = currentNode.State.slice();
         nextState[leftSpots[i]] = nextPlayer;
-        let nextNode = {"State": nextState, "Player": nextPlayer, "Parent": currentNode, 
-                        "Payoff": null, "PrevMove": leftSpots[i], "Children": []};
+        let nextNode = {"State": nextState, "Player": nextPlayer, "Payoff": null, 
+                        "PrevMove": leftSpots[i], "Children": []};
         currentNode.Children.push(nextNode);
         tree.push(nextNode);
         createTree(tree);
@@ -208,6 +245,7 @@ function printTree(tree){
     let queue = [tree[0]];
     while (queue.length > 0){
         let selectedNode = queue[0];
+        console.log(selectedNode);
         queue.splice(0, 1);
         for (let child of selectedNode.Children){
             queue.push(child);
