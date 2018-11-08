@@ -66,12 +66,12 @@ function makeMove(cell){
     const selectedCellId = cell.target.id;
     moveOfPlayer(board, selectedCellId, humanPlayer);
     if (!endGame){
-        //let copyBoard = board;
-        //copyBoard = ['X', 1, 'O', 'O', 4, 'O', 6, 'X', 'X'];
-        //minimax(copyBoard, humanPlayer);
+        let copyBoard = board;
+        copyBoard = ['X', 1, 'O', 'O', 4, 'O', 6, 'X', 'X'];
+        minimax(copyBoard, humanPlayer);
         //let bestAction = minimax(board, aiPlayer);
-        let availableSpots = board.filter(elem => (typeof elem) == 'number');
-        moveOfPlayer(board, availableSpots[0], aiPlayer);
+        //let availableSpots = board.filter(elem => (typeof elem) == 'number');
+        //moveOfPlayer(board, availableSpots[0], aiPlayer);
     }
 }
 
@@ -154,7 +154,7 @@ function showResult(winList, announce, color){
 }
 
 class Node{
-    constructor(state, player, parent, children, payoff){
+    constructor(state, player, parent, children = [], payoff = null){
         this.state = state; // the board
         this.player = player; // X or O, action that creates the state
         this.parent = parent;
@@ -165,46 +165,46 @@ class Node{
 
 function minimax(currentState, player){
     // Generate the tree
-    let startNode = new Node(currentState, player, null, [], null);
+    const startNode = new Node(currentState, player, null);
     tree(startNode);
-
     // print the tree
-    //console.log(startNode);
     //printTree(startNode);
 }
 
+let nextState;
+let availableSpots;
+let nextPlayer;
+let nextNode;
+let count = 0;
+
 function tree(currentNode){
-    let currentState = currentNode.state;
-    let currentPlayer = currentNode.player;
-    
-    if (isWon(currentState, currentPlayer)){
-        if (currentPlayer == humanPlayer) currentNode.payoff = [-1,1];
+    count += 1;
+
+    if (isWon(currentNode.state, currentNode.player, true)){
+        if (currentNode.player == humanPlayer) currentNode.payoff = [-1,1];
         else currentNode.payoff = [1,-1];
-        console.log(currentNode.state, currentNode.payoff);
         return;
-    }else if (isTie(currentState)){
+    }else if (isTie(currentNode.state, true)){
         currentNode.payoff = [0,0];
-        console.log(currentNode.state, currentNode.payoff);
         return;
     }
     
-    let nextState = currentState.slice();
-    let availableSpots = currentState.filter(elem => (typeof elem) == 'number');
+    nextState = currentNode.state.slice();
+    availableSpots = currentNode.state.filter(elem => (typeof elem) == 'number');
+    console.log(availableSpots);
+    console.log(availableSpots.length);
     for (let i = 0; i < availableSpots.length; i++){
-        nextState[availableSpots[i]] = currentPlayer;
-        let nextPlayer = currentPlayer == humanPlayer ? 'O':'X';
-        let nextNode = new Node(nextState, nextPlayer, currentNode, [], null);
+        nextPlayer = currentNode.player == humanPlayer ? 'O':'X';
+        nextState[availableSpots[i]] = nextPlayer;
+        nextNode = new Node(nextState, nextPlayer, currentNode);
         currentNode.children.push(nextNode);
         tree(nextNode);
     }
 }
 
 function printTree(currentNode){
-    if (currentNode == null){
-        return;
-    }
+    console.log(currentNode);
     for (i = 0; i < currentNode.children.length; i++){
-        console.log(currentNode.children[i]);
         printTree(currentNode.children[i]);
     }
 }
