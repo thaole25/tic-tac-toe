@@ -6,11 +6,16 @@ const humanPlayer = 'X';
 const aiPlayer = 'O';
 const resultDiv = document.getElementById("result");
 const resetButton = document.getElementById('reset');
+const MIN = -10;
+const MAX = 10;
 
 let cells;
 let endGame = false;
 let winList = [];
 let board = [];
+
+let alpha = MIN;
+let beta = MAX;
 
 createTable(rowTiles);
 
@@ -87,12 +92,14 @@ function makeMove(cell){
     moveOfPlayer(board, selectedCellId, humanPlayer);
     if (!endGame){
         let copyBoard = board.slice();
+        alpha = MIN;
+        beta = MAX;
         let bestAction = minimax(copyBoard, humanPlayer);
         moveOfPlayer(board, bestAction, aiPlayer);
     }
 }
 
-function moveOfPlayer(currentState, selectedCellId, player){
+function moveOfPlayer(currentState, selectedCellId, player){  
     // Check tie
     if (! isTie(currentState, false)){
         const selectedCell = document.getElementById(selectedCellId);
@@ -175,61 +182,63 @@ function minimax(currentState, player){
     // Generate the tree
     let tree = [];
     const startNode = {"State": currentState, "Player": player, "Payoff": null, 
-                       "PrevMove": null, "Children": []};
+                       "PrevMove": null, "Children": [], "Parent": null};
     tree.push(startNode);
     createTree(tree);
-
-    // print the tree: BFS
-    // printTree(tree);
+    
+    //console.log(tree.length);
 
     let bestAction = null;
-    // TODO: Not really efficient, need to improve
+    let maxValue = MIN;
     for (let child of startNode.Children){
-        if (child.Payoff == startNode.Payoff){
+        if (child.Payoff != null && child.Payoff > maxValue){
+            maxValue = child.Payoff;
             bestAction = child.PrevMove;
         }
     }
+    //console.log(maxValue);
     return bestAction;
 }
 
 function createTree(tree){
-    let currentNode = tree[tree.length - 1];
-    if (isWon(currentNode.State, currentNode.Player, true)){
-        if (currentNode.Player == humanPlayer) currentNode.Payoff = [-1,1];
-        else currentNode.Payoff = [1,-1];
-        return;
-    }else if (isTie(currentNode.State, true)){
-        currentNode.Payoff = [0,0];
+    if (alpha > beta){
         return;
     }
+    let currentNode = tree[tree.length - 1];
+    if (isWon(currentNode.State, currentNode.Player, true)){
+        if (currentNode.Player == humanPlayer)currentNode.Payoff = -1;
+        else currentNode.Payoff = 1;
+        alpha = Math.max(currentNode.Payoff, alpha);
+        beta = Math.min(currentNode.Payoff, beta);
+        return;
+    }else if (isTie(currentNode.State, true)){
+        currentNode.Payoff = 0;
+        alpha = Math.max(currentNode.Payoff, alpha);
+        beta = Math.min(currentNode.Payoff, beta);
+        return;
+    }
+
     let leftSpots = currentNode.State.filter(elem => (typeof elem) == 'number');
     let len = leftSpots.length;
+
     for (let i = 0; i < len; i++){
         let nextPlayer = currentNode.Player == humanPlayer ? 'O':'X';
         let nextState = currentNode.State.slice();
         nextState[leftSpots[i]] = nextPlayer;
         let nextNode = {"State": nextState, "Player": nextPlayer, "Payoff": null, 
-                        "PrevMove": leftSpots[i], "Children": []};
+                        "PrevMove": leftSpots[i], "Children": [], "Parent": currentNode};
         currentNode.Children.push(nextNode);
         tree.push(nextNode);
         createTree(tree);
     }
-    let maxValue = -100;
+
+    // Update the payoff for parent node
+    let childrenPayoff = currentNode.Children.map(elem => elem.Payoff);
     if (currentNode.Player == humanPlayer){
         // childNode will be aiPlayer
-        for (let child of currentNode.Children){
-            if (maxValue < child.Payoff[0]){
-                maxValue = child.Payoff[0];
-                currentNode.Payoff = child.Payoff;
-            }
-        }
+        currentNode.Payoff = Math.max.apply(null, childrenPayoff);
     }else{
-        for (let child of currentNode.Children){
-            if (maxValue < child.Payoff[1]){
-                maxValue = child.Payoff[1];
-                currentNode.Payoff = child.Payoff;
-            }
-        }
+        currentNode.Payoff = Math.min.apply(null, childrenPayoff);
     }
 }
 
