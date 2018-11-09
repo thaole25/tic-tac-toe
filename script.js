@@ -1,18 +1,34 @@
 // Author: Thao Le
 
-const numTiles = 9;
 const rowTiles = 3; 
+const numTiles = rowTiles * rowTiles;
 const humanPlayer = 'X';
 const aiPlayer = 'O';
-const cells = document.querySelectorAll('.cell');
 const resultDiv = document.getElementById("result");
 const resetButton = document.getElementById('reset');
 
+let cells;
 let endGame = false;
 let winList = [];
 let board = [];
 
+createTable(rowTiles);
+
 startGame();
+
+function createTable(size){
+    let myTable = "<table>";
+    for (let i = 0; i < size; i++){
+        myTable += "<tr>";
+        for (let j = 0; j < size; j++){
+            myTable += "<td class=\"cell\" id=\"" + (i * size + j) + "\"></td>";
+        }
+        myTable += "</tr>";
+    }
+    myTable += "</table>";
+    document.getElementById("table").innerHTML = myTable;
+    cells = document.querySelectorAll('.cell');
+}
 
 // Create the results of winning
 function storeResults(){
@@ -72,7 +88,6 @@ function makeMove(cell){
     if (!endGame){
         let copyBoard = board.slice();
         let bestAction = minimax(copyBoard, humanPlayer);
-        //let availableSpots = board.filter(elem => (typeof elem) == 'number');
         moveOfPlayer(board, bestAction, aiPlayer);
     }
 }
