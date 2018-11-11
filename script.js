@@ -180,9 +180,9 @@ function minimax(currentState, player){
     const startNode = {"State": currentState, "Player": player, "Payoff": MIN, 
                        "PrevMove": -1, "Children": [], "Parent": null, "Alpha": MIN, "Beta": MAX};
     tree.push(startNode);
-    createTree(tree);
+    createTree(startNode);
     
-    //console.log(tree);
+    console.log(tree.length);
 
     let bestAction = null;
     let maxValue = MIN;
@@ -192,17 +192,16 @@ function minimax(currentState, player){
             bestAction = child.PrevMove;
         }
     }
-    //console.log(maxValue);
     return bestAction;
 }
 
-function createTree(tree){
-    let currentNode = tree[tree.length - 1];
+function createTree(currentNode){
+    //let currentNode = tree[tree.length - 1];
     let leftSpots = currentNode.State.filter(elem => (typeof elem) == 'number');
     let len = leftSpots.length;
 
     for (let i = 0; i < len; i++){
-        if (currentNode.Alpha == 1){
+        if (currentNode.Alpha >= currentNode.Beta){
             break;
         }
         let nextPlayer = currentNode.Player == humanPlayer ? 'O':'X';
@@ -246,7 +245,7 @@ function createTree(tree){
         currentNode.Children.push(nextNode);
         tree.push(nextNode);
         if (! (nextPayoff > MIN  && nextPayoff < MAX)){
-            createTree(tree);
+            createTree(tree[tree.length - 1]);
         }    
     }
 
